@@ -3,6 +3,7 @@ title: "Carolina Lenes Arreola"
 ---
 
 
+
 ![](Carolina Lenes Picture.jpg){width=45%}
 
 Carolina is a Colombian commercial and maritime lawyer currently completing a Master’s in Business Analytics at Baruch College. Her academic background also includes an Associate’s degree in Business Administration from LaGuardia Community College. After successfully completing her initial studies and post-graduation work, she continues to serve LaGuardia within the Division of Student Affairs for the ACCES Pre-ETS program. Carolina is looking to merge her legal expertise with advanced research and data analysis to drive strategic business insights.
@@ -36,13 +37,13 @@ leaflet() |>
 
 ### Contact info
 
-Find Carolina Lenes Arreola on Microsoft Teams or send her an email to carolina.lenesarreola75@stu-mail.baruch.cuny.edu
+Find Carolina Lenes Arreola on Microsoft **Teams** or send her an email to **carolina.lenesarreola75@stu-mail.baruch.cuny.edu**
 
 ### Personal info
 
-[LinkedIn](www.linkedin.com/in/carolina-lenes-arreola)
+[LinkedIn](https://www.linkedin.com/in/carolina-lenes-arreola/)
 
 ### Hobbies
 
-Carolina is a jigsaw puzzle builder and loves writing. She is the author of the childre's book ["Oh No! Where are the Christmas Presents?"](https://www.amazon.com/Where-Christmas-Presents-Robots-Adventures/dp/B0DKW7622V/ref=sr_1_1?crid=3G4N3RI5O50A4&dib=eyJ2IjoiMSJ9.0JarcChF42pcGr-r1biklt9n90433vPpcNNwylRZpRA0AWnfMWGpxuSPtoCdKC9rMOv5QwwtMQNIEt8wu_G_ePiJxHyfoKT4P8n_cOC-UYta2eb57Adllqoqy3WNTckxtpplAYPFH6KmB5ZKGwPvhDw0yk8u0u9dciDqL7fp5q7-_G5NryrLXFPQ1OkOQ36if_YSjbW4khXvODI-Qkl1kKzHTEkio-aPodGU138VszA.SP-WvHJgsCg9a8-l-v8LH5j7LQ7TWk8QVNeBh__EPVE&dib_tag=se&keywords=oh+no+where+are+the+christmas+presents&qid=1789935871&sprefix=Oh+no+where+are+the%2Caps%2C100&sr=8-1), so if you have little kids and love Christmas, you will enjoy reading this book.  
+Carolina is a jigsaw puzzle builder and loves reading and writing. She is the author of the children's book ["Oh No! Where Are the Christmas Presents?"](https://www.amazon.com/Where-Christmas-Presents-Robots-Adventures/dp/B0DKW7622V/ref=sr_1_1?crid=3G4N3RI5O50A4&dib=eyJ2IjoiMSJ9.0JarcChF42pcGr-r1biklt9n90433vPpcNNwylRZpRA0AWnfMWGpxuSPtoCdKC9rMOv5QwwtMQNIEt8wu_G_ePiJxHyfoKT4P8n_cOC-UYta2eb57Adllqoqy3WNTckxtpplAYPFH6KmB5ZKGwPvhDw0yk8u0u9dciDqL7fp5q7-_G5NryrLXFPQ1OkOQ36if_YSjbW4khXvODI-Qkl1kKzHTEkio-aPodGU138VszA.SP-WvHJgsCg9a8-l-v8LH5j7LQ7TWk8QVNeBh__EPVE&dib_tag=se&keywords=oh+no+where+are+the+christmas+presents&qid=1789935871&sprefix=Oh+no+where+are+the%2Caps%2C100&sr=8-1), if you have little ones in your family who love Christmas, they will enjoy reading this book.  
 
