@@ -1,7 +1,586 @@
 
   ---
-  title: "Mini-Project Placeholder"
+  title: "STA9750 Mini-Project 01: What We Watched"
+  author: "Carolina Lenes Arreola"
+  formal:
+    html:
+      toc: true
+      code-fold: true
   ---
   
-  This is a placeholder for STA9750 Mini-Project 1. Check back soon for more!
+## Data Ingest and Acquisition
+
+```{r}
+#' Acquire Netflix What We Watched Reports
+#' 
+#' This function will acquire and standardize all data for MP#01
+#' from Netflix. Because Netflix hosts the data files behind a CDN, we
+#' are accessing the release pages and automatically extracting links to the
+#' relevant files (with CDN hash). 
+#' 
+#' After import, files are stacked vertically and some basic cleaning is
+#' performed. 
+load_netflix_data <- function(){
+  # Note to students: Make sure you have installed the tidyverse and fs packages
+  #                   before beginning this assignment. If you aren't sure,
+  #                   simply run `library(tidyverse)` at your R Console and, if
+  #                   you don't see an error message, `tidyverse` has been 
+  #                   installed. (Same for `fs`) If you still need to install
+  #                   either package, use the `install.packages` function as 
+  #                   demonstrated in class.
+  library(tidyverse)
+  library(rvest)
+  library(readxl)
+  library(fs)
   
+  data_dir <- path("data", "mp01")
+    
+  if(!dir_exists(data_dir)){
+    dir_create(data_dir, showWarnings=FALSE, recurse=TRUE)
+  }
+  
+  NETFLIX_URLS <- list(
+    `2023H1` = "https://about.netflix.com/news/what-we-watched-a-netflix-engagement-report",
+    `2023H2` = "https://about.netflix.com/news/what-we-watched-the-second-half-of-2023",
+    `2024H1` = "https://about.netflix.com/news/what-we-watched-the-first-half-of-2024",
+    `2024H2` = "https://about.netflix.com/news/what-we-watched-the-second-half-of-2024",
+    `2025H1` = "https://about.netflix.com/news/what-we-watched-the-first-half-of-2025",
+    `2025H2` = "https://about.netflix.com/news/what-we-watched-the-second-half-of-2025",
+    `2026H1` = "https://about.netflix.com/news/what-we-watched-the-first-half-of-2026"
+  )
+  
+  download_if_needed <- function(url, local){
+    if(!file_exists(local)){
+      download.file(url, local, quiet = TRUE, mode = "wb")
+    }
+    
+    return(local)
+  }
+    
+  NETFLIX_URLS |> 
+    map(read_html) |> 
+    map(html_element, xpath = "//a[contains(@href, '.xlsx')]") |> 
+    map_chr(html_attr, "href") |> 
+    enframe("period", "url") |> 
+   mutate(path = path(data_dir, paste0(period, ".xlsx")), 
+          path = map2(url, path, download_if_needed), 
+          data = map(path, read_excel, skip=3, na="*"), 
+          data = map(data, \(x) x |> mutate(`Release Date` = as.Date(`Release Date`)))) |>
+    unnest(data) |> 
+    select(-url, -path) |> 
+    mutate(year=str_sub(period, 1, 4), 
+           half=str_sub(period, start=6), 
+           period_start = make_date(year, if_else(half==1, 1, 7), 1), 
+           period_end = make_date(year, if_else(half==1, 6, 12), if_else(half==1, 30, 31))) |> 
+    filter(!is.na(`Hours Viewed`)) |> 
+    mutate(live_event = !is.na(Runtime) & str_detect(Runtime, "\\d+:\\d+\\*"), 
+           clean_time = str_remove(Runtime, fixed("*")),
+           Runtime = 60 * hour(hm(clean_time)) + minute(hm(clean_time))) |>
+    select(-clean_time) |>
+    mutate(Runtime = coalesce(Runtime, mean(Runtime, na.rm=TRUE)), 
+           .by=Title, 
+           Title = stringi::stri_trans_general(Title, "Latin-ASCII"),
+           Title = str_remove(Title, " // .*"), 
+           Title = str_remove(Title, "[^[:ascii:]].*"), 
+           Title = str_trim(Title)) |>
+    filter_out(Title == "") |>
+    select(year, 
+           period, 
+           period_start, 
+           period_end, 
+           Title, 
+           -half, 
+           Runtime, 
+           Views, 
+           `Hours Viewed`, 
+           `Release Date`,
+           `Available Globally?`, 
+           live_event)
+}
+## Data Cleaning and Preparation
+
+###It is convenient to highlight the fact that Netflix is not consistent with some of the data presented. The tittles of the shows or movies are not standardized; for example, we can find Seinfeld: Season 1 and Seinfeld: Season 3, but Stranger Things and Stranger Things 3. Similarly, for Runtime, some catalog entries do not have a published run time. For the total hours a title was viewed, shows with low hours (less than 50,000 hours of view time) are omitted.     
+
+library(tidyverse)
+NETFLIX_DATA = load_netflix_data()|>
+  rename(
+    title = Title,
+    run_time = Runtime,
+    hours_viewed = `Hours Viewed`,
+    number_of_views = Views,
+    release_date = `Release Date`,
+    available_globally = `Available Globally?`
+  )|>
+  mutate(
+    year = as.integer(year),
+    available_globally = available_globally == "Yes"
+  )
+  
+```
+  
+## Initial Data Exploration
+Before moving to our analysis, we will explore our data to make sure we guarantee quality control review and solve any anomalies early. 
+
+```{r}
+#| label: eda-initial
+#| message: false
+#| warning: false
+
+library(skimr)
+
+# 1. Review basic dimensions or data type
+glimpse(NETFLIX_DATA)
+
+# 2. Review basic (univariate) summary statistics
+summary(NETFLIX_DATA)
+skim(NETFLIX_DATA)
+```
+```{r}
+#| label: task5_questions_1to3
+#| echo: false
+#| message: false
+#| warning: false
+
+# Q1: Date range covered by this data set. 
+min_date = min(NETFLIX_DATA$release_date, na.rm = TRUE)
+max_date = max(NETFLIX_DATA$release_date, na.rm = TRUE)
+
+# Q2: Number of different shows and movies are covered in this data set.
+total_unique_titles = n_distinct(NETFLIX_DATA$title)
+
+#Q3: Number of total hours have been spent watching shows from the Bridgerton universe
+bridgerton_hours = NETFLIX_DATA |>
+  filter(str_detect(title, "Bridgerton")) |>
+  summarise(total_hours = sum(hours_viewed, na.rm = TRUE)) |>
+  pull(total_hours)
+bridgerton_formatted = round(bridgerton_hours/1e6, 1)
+```
+### Scope of the report
+
+We need to establish a clear scope of the NETFLIX's historic positioning of shows and movies; in that sense, we evaluated the range of date we are focusing on, the different shows and movies, and the total number of hours viewers have spent watching shows from the *Bridgerton* universe.
+
+### Variety of shows and movies Task 5 Q.1 and Q.2
+
+The different shows and movies span a chronological footprint, capturing active consumer content entries tracking from **`r min_date`** up to modern releases observed in **`r max_date`**. Within this timeline, NETFLIX tracks give us a total of **`r total_unique_titles`** unique titles.
+
+### Total hours spent by viewers watching shows from the *Bridgerton* universe. Q3 
+
+When assesing budget optimization for future production cycles, looking at how single franchises compound engagement is highly informative. The critically aclaimed *Bridgerton* universe-spanning original flagsip seasons and its auxiliary spinoff series -has achieved massive structural stickness. Thoughout our tracking data, global subscribers spent a staggering **`r bridgerton_formatted` million hours** actively inmerse in the *Bridgerton* universe. This numbers show a high return on investment (ROI).
+
+```{r}
+#| label: task5_questions_4to6
+#| echo: false
+#| message: false
+#| warning: false
+
+
+# Q4: Isolate and calculate exact "real" Stranger Things hours
+stranger_things_data = NETFLIX_DATA |>
+  filter(str_detect(title, "Stranger Things")) |>
+  filter(!str_detect(title, "Beyond Stranger Things")) |>
+  filter(!str_detect(title, "Tales from '85")) |>
+  filter(!str_detect(title, "Fireplace"))
+
+st_hours = sum(stranger_things_data$hours_viewed, na.rm = TRUE)
+st_millions = round(st_hours / 1e6, 1)
+
+# Q5: Calculate the percentage of watch time captured by the Top 10 titles in 2026H1
+data_2026h1 = NETFLIX_DATA |> 
+  filter(period == "2026H1")
+
+total_hours_2026h1 = sum(data_2026h1$hours_viewed, na.rm = TRUE)
+
+top_10_hours_2026h1 = data_2026h1 |>
+  slice_max(hours_viewed, n = 10, with_ties = FALSE) |>
+  summarise(top_hours = sum(hours_viewed, na.rm = TRUE)) |>
+  pull(top_hours)
+
+top_10_percentage = round((top_10_hours_2026h1 / total_hours_2026h1) * 100, 1)
+
+# Q6: Calculate global availability fractions (by title volume vs. hours viewed weighted)
+global_metrics = NETFLIX_DATA |>
+  summarise(
+    total_titles = n(),
+    global_titles = sum(available_globally == TRUE, na.rm = TRUE),
+    total_hours = sum(hours_viewed, na.rm = TRUE),
+    global_hours = sum(hours_viewed[available_globally == TRUE], na.rm = TRUE)
+  ) |>
+  mutate(
+    pct_by_title = round((global_titles / total_titles) * 100, 1),
+    pct_by_hours = round((global_hours / total_hours) * 100, 1)
+  )
+
+pct_global_titles = global_metrics$pct_by_title
+pct_global_hours = global_metrics$pct_by_hours
+```
+### *Stranger Things*
+The show *Stranger Things* has 5 seasons and we analyzed how many hours viewers spent watching it or this purpose we left out titles like *Beyond Stranger Things*, *Tales from '85*, and *Stranger Things: Fireplace*.  
+As mentioned, we isolated the engagement from companion promotional medial to have a better idea of the budget vs return of this show. Our result gave us a staggering **`r st_millions` million total hours** to the 5-season series. 
+
+### Audience concentration
+
+Now, if we focus our attention to the Top 10 titles of the first half of 2026, we can conclude that viewers dedicate **`r top_10_percentage`% of the total watch time** across all the platform. 
+
+### Universal distribution 
+
+Global availability of a show or movie makes a significant difference in NETFLIX catalog. When analizing the volume of listings , **`r pct_global_titles`% of all catalog titles** are identified as globally available. Nevertheless, when we weight this distribution by the actual engagement, titles with global viewers lead with a **`r pct_global_hours`% of all hours viewed** on the platform. So, per asset or show, indicates that universally available content generates a significant higher engagement.   
+
+## Task 6: Advanced Exploratory Analysis including tables 
+
+As our analytical scope expands to multi-variable queries, standalone data points are insufficient. We will use tables to deliver publication-quality insights to Netflix senior leadership. 
+
+### Top-Performing Content by Period and Market Share
+
+To isolate what drives peak platform engagement, we mapped the single highest-performing title within each six-month window. Furthermore, we calculated that title's "market share"—the exact fraction of total platform viewing hours it captured during that specific period.
+
+## Exploratory Questions -Table Answers. Here we employ the `{gt}` package to construct structured, presentation-ready tables that surface deep performance trends across reporting periods.
+
+For a simpler overview of the different titles and the amount of total hours they were viewed, we will expand on the top title per period and the fraction of total viewership it captured. Therefore, we mapped the highest performing title withing each half or six-month period.  
+
+```{r}
+#| label: task6_q1_top_titles
+#| message: false
+#| warning: false
+
+install.packages("gt")
+library(tidyverse)
+library(gt)
+
+# Step 1: Calculate total viewership hours for each period to use as a baseline denominator
+period_totals = NETFLIX_DATA |>
+  group_by(period) |>
+  summarise(total_period_hours = sum(hours_viewed, na.rm = TRUE))
+
+# Step 2: Find the top title per period and join the totals to calculate the fraction
+top_titles_table = NETFLIX_DATA |>
+  group_by(period, title) |>
+  summarise(title_hours = sum(hours_viewed, na.rm = TRUE), .groups = "drop") |>
+  group_by(period) |>
+  slice_max(title_hours, n = 1, with_ties = FALSE) |>
+  left_join(period_totals, by = "period") |>
+  mutate(viewership_fraction = title_hours / total_period_hours) |>
+  ungroup()
+
+# Step 3: Format the summary data into an executive-ready gt table
+top_titles_table |>
+  select(period, title, title_hours, viewership_fraction) |>
+  gt() |>
+  tab_header(
+    title = "Top Title in Each Period",
+    subtitle = "Analysis of leading titles and global viewership share"
+  ) |>
+  cols_label(
+    period = "Reporting Period",
+    title = "Top Performing Title",
+    title_hours = "Total Hours Viewed",
+    viewership_fraction = "Platform Share (%)"
+  ) |>
+  fmt_number(
+    columns = title_hours,
+    decimals = 0,
+    suffixing = TRUE # to change large numbers to M (Millions) or B (Billions)
+  ) |>
+  fmt_percent(
+    columns = viewership_fraction,
+    decimals = 2
+  ) |>
+  tab_options(
+    table.width = pct(100),
+    heading.background.color = "#98FF98" # Choosing an easy-on-the-eye color
+  )
+```
+
+### As a result, the flagship title performance across reporting periods reveals that there is a trend. When looking at the **Top Title in Each Period** table above, several insights emerge for leadership:
+* **Multi-season series or shows:** Most of the attention among viewers on Netflix fall into this category. There are thousands of titles gaining Over 0.9% to 1.35% of total platform attention. 
+* **Viewership concentration:** Although some titles vanish after certain period due to audience decrease, the percentage of watch time capture by the top shows remains stable from period to period. This situation could indicate that new releases are needed to keep this trends. 
+
+```{r}
+#| label: task6-q2-catalog-trends
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gt)
+
+# Step 1: Calculate total titles and hours per period, split by global availability
+catalog_growth <- NETFLIX_DATA |>
+  group_by(period, available_globally) |>
+  summarise(
+    title_count = n_distinct(title),
+    total_hours = sum(hours_viewed, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    rights_status = if_else(available_globally, "Globally Available", "Regionally Restricted")
+  )
+
+# Step 2: Render a clean, grouped tracking table
+catalog_growth |>
+  select(period, rights_status, title_count, total_hours) |>
+  gt(groupname_col = "period") |> # Groups rows cleanly by their 6-month operational window
+  tab_header(
+    title = "Catalog Architecture and Licensing Evolution",
+    subtitle = "Tracking total volume and viewership across global rights segments"
+  ) |>
+  cols_label(
+    rights_status = "Rights Classification",
+    title_count = "Active Titles Count",
+    total_hours = "Cumulative Hours Viewed"
+  ) |>
+  fmt_number(
+    columns = title_count,
+    decimals = 0
+  ) |>
+  fmt_number(
+    columns = total_hours,
+    decimals = 0,
+    suffixing = TRUE
+  ) |>
+  tab_options(
+    table.width = pct(100),
+    heading.background.color = "#98FF98" # continue with the mint layout
+  )
+```
+## To evaluate how Netflix's catalog changed in size over the periods, we have risen the attention over *Regionally Restricted* and *Globally Available* content and their total run-time over every period. Looking at the data presented in the table above, there is an undisputed disproportion in share of viewer attention. **Regional Restricted** content has the major number of titles, but **Globally Available** captures by far the majority of the watching hours spent. 
+
+```{r} 
+#| label: task6-q3-comfort-food-staples 
+#| message: false 
+#| warning: false 
+
+library(tidyverse) 
+library(gt) 
+# Step 1: Calculate consistency metrics for every title across all periods 
+comfort_food_analysis = NETFLIX_DATA |> 
+  group_by(title) |> 
+  summarise( 
+    periods_tracked = n_distinct(period), # Must be present across reporting cycles 
+    average_hours = mean(hours_viewed, na.rm = TRUE), 
+    minimum_hours = min(hours_viewed, na.rm = TRUE),
+    viewership_stability = sd(hours_viewed, na.rm = TRUE), # Low SD = stable viewership 
+    .groups = "drop" ) |> 
+  # Filter for true staples: must appear in at least 6 periods and maintain high baseline views 
+  filter(periods_tracked >= 6, minimum_hours > 1000000) |>
+  slice_max(minimum_hours, n = 10, with_ties = FALSE) # Grab the top 10 most reliable anchors 
+
+# Step 2: Shortcuts for report
+top_staple_name = comfort_food_analysis$title[1]
+top_staple_floor = round(comfort_food_analysis$minimum_hours[1] / 1e6,1)
+
+# Step 3. Render the true Question 3 executive table
+comfort_food_analysis |> 
+  select(title, periods_tracked, average_hours, minimum_hours) |> 
+  gt() |> 
+  tab_header( 
+    title = "Platform Content Anchors and Comfort Food Staples",
+    subtitle = "Top 10 titles with the highest guaranteed baseline views across tracking periods" 
+  ) |> 
+  cols_label( 
+    title = "Content Title", 
+    periods_tracked = "Periods Active", 
+    average_hours = "Average Hours / Period", 
+    minimum_hours = "Floor Viewership or Worst Period" 
+  ) |> 
+  
+  fmt_number( 
+    columns = c(average_hours, minimum_hours), 
+    decimals = 0, 
+    suffixing = TRUE 
+  ) |> 
+  
+  tab_options( 
+    table.width = pct(100), 
+    heading.background.color = "#005B60"
+  )
+
+```
+
+```{r}
+#| label: task6_q4_shows_vs_movies
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gt)
+# Step 1. Applying the 4-hour runtime benchmark to classify content categories
+classified_catalog = NETFLIX_DATA |>
+  filter(!is.na(run_time)) |> # To exclude any missing runtime data
+  mutate(
+    content_type = if_else(run_time > 240, "TV Show (Season Block)", "Movie / Standalone")
+)
+# Step 2. Compute aggregate period benchmarks and volume fractions
+format_fractions = classified_catalog |>
+  group_by(period, content_type) |>
+  summarise(
+    category_hours = sum(hours_viewed, na.rm = TRUE),
+    .groups = "drop_last"
+  ) |>
+  mutate(
+    total_period_hours = sum(category_hours),
+    viewership_fraction = category_hours / total_period_hours
+  ) |>
+ungroup()
+
+# Shortcuts for report (memo)
+avg_tv_share = round(mean(format_fractions$viewership_fraction[format_fractions$content_type == "TV Shows (Season Block)"]) * 100, 1)
+avg_movie_share = round(mean(format_fractions$viewership_fraction[format_fractions$content_type == "Movie / Standalone"]) * 100, 1)
+
+# Step 3. Rendering a presentation table
+
+format_fractions |>
+  select(period, content_type, category_hours, viewership_fraction) |>
+  gt(groupname_col = "period") |>
+  tab_header(
+    title = "Format Segmentation: TV Shows vs. Movies",
+    subtitle = "Analysis of platform viewing distribution based on a 4-hour runtime classification benchmark"
+  ) |>
+  cols_label(
+    content_type = "Content Format Classification",
+    category_hours = "Total Hours Consumed",
+    viewership_fraction = "Platform Engagement Share (%)"
+  ) |>
+  fmt_number(
+    columns = category_hours,
+    decimals = 0,
+    suffixing = TRUE
+  ) |>
+  fmt_percent(
+    columns = viewership_fraction,
+    decimals = 2
+  ) |>
+  tab_options(
+    table.width = pct(100),
+    heading.background.color = "#76C1B1"
+  )
+```
+```{r}
+#| label: task6_q5_live_vs_taped
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gt)
+
+# Step 1. Establish title key words to classify Live and pre-taped content 
+live_classification = "Live|Roast of|WWE Raw|Awards|Comedy Special|The Roast"
+
+classified_live_data = NETFLIX_DATA |>
+  mutate(
+    is_live = str_detect(title, regex(live_classification, ignore_case = TRUE)),
+    content_format = if_else(is_live, "Live Event / Special", "Pre-taped Content")
+  )
+
+#Step 2. Aggregate counts and comparison
+
+live_vs_taped_summary = classified_live_data |>
+  group_by(content_format) |>
+  summarise(
+    total_titles = n_distinct(title),
+    average_views = mean(hours_viewed, na.rm = TRUE),
+    top_tier_views = max(hours_viewed, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 3. Shortcuts for report (memo)
+pct_live_hours = round((live_vs_taped_summary$average_views[live_vs_taped_summary$content_format == "Live Event / Special"] / sum(live_vs_taped_summary$average_views)) * 100, 1)
+
+pct_taped_hours = round((live_vs_taped_summary$average_views[live_vs_taped_summary$content_format == "Pre-taped Content"] / sum(live_vs_taped_summary$average_views)) * 100, 1)
+
+
+count_live_titles = live_vs_taped_summary$total_titles[live_vs_taped_summary$content_format == "Live Event / Special"] 
+count_taped_titles = live_vs_taped_summary$total_titles[live_vs_taped_summary$content_format == "Pre-taped Content"]
+
+live_peak_millions = round(live_vs_taped_summary$top_tier_views[live_vs_taped_summary$content_format == "Live Event / Special"] / 1e6, 1)
+pre_taped_peak_millions = round(live_vs_taped_summary$top_tier_views[live_vs_taped_summary$content_format == "Pre-taped Content"] / 1e6, 1)
+
+# Step 4. Format in gt for presentation or report
+live_vs_taped_summary |>
+  gt() |>
+  tab_header(
+    title = "Platform Analytics: Live Events vs. Pre-Taped Content",
+    subtitle = "Strategic comparison of baseline averages and top-tier performance"
+  ) |>
+  cols_label(
+    content_format = "Content Type",
+    total_titles = "Total Tracked Titles",
+    average_views = "Average Viewership Hours",
+    top_tier_views = "Top-Tier Viewership Peak"
+  ) |>
+  fmt_number(
+    columns = total_titles,
+    decimals = 0
+  ) |>
+  fmt_number(
+    columns = c(average_views, top_tier_views),
+    decimals = 0,
+    suffixing = TRUE
+  ) |>
+  tab_options(
+    table.width = pct(100),
+    heading.background.color = "#5A738E"
+  )
+```
+## *Corporate Strategy memo*
+
+**TO:** Netflix Senior Leadership & Executive Committee  
+**FROM:** Carolina Lenes Arreola 
+**DATE:** October 12, 2026  
+**SUBJECT:** Data-driven portfolio optimization for Netflix's original content strategy for 2027 and beyond. 
+
+### Executive Summary
+
+To optimized resource allocation, maximize profitability, and improve platform performance metrics, this brief report evaluates the core data features that drive Netflix content environment. These features include: viewership patterns, program titles, runtimes, the total hours consumed, the original release windows, global distribution rights, and live or pre-recorded content. This memo focuses in four Strategic Dimensions: Format Segmentation (Series vs. Movies), Catalog Architecture and Licensing Evolution (Regionally licensed and Globally available content), Platform Content Anchors and Comfort Food Staples, and Platform Analytics: Live Events vs. Pre-Taped Content. 
+
+### Portfolio overview (Data insights)
+
+It is important to highlight that the data used for this memo-report was acquired from Netflix’s corporate relations website and it includes the "What We Watched" reports; the catalog span a chronological footprint, capturing active consumer content entries tracking from **`r min_date`** up to modern releases observed in **`r max_date`**. Within this timeline, NETFLIX tracks give us a total of **`r total_unique_titles`** unique titles.
+
+### Strategic Dimensions 1: Format Segmentation (Series vs. Movies)
+
+By deploying a four-hour runtime classification benchmark to distinguish multi-episode serialized season blocks from standalone features (movies). Viewers are concentrating their attention on TV Shows blocks. Across every tracked reporting interval, seasonal TV Show blocks consistently command an average of **`r avg_tv_share`%** of global platform viewing hours. Conversely, traditional standalone movies carry a mere **`r avg_movie_share`%** share of the platform consumption time.
+
+To optimize structural content expenditures, Netflix builds its infrastructure on global subscribers who prefer episodic or seasonal content. My recommendation falls on focusing production budget on series or seasonal content over movies. 
+
+### Strategic Dimension 2: Catalog Architecture and Licensing Evolution (Regionally licensed and Globally available content).  
+
+From the distribution and licensing point of view, the majority of platform content goes to Regionally Restricted content, leaving only **`r pct_global_titles`% of all catalog titles** identified as globally available content. However, when this distribution is weighted by the actual engagement, titles with global viewers lead with **`r pct_global_hours`% of all hours viewed** on the platform. So, per asset or show, universally available content generates a significant higher engagement.  
+
+Tracking total volume and viewership across global rights segments, it is evident that globally accessible content generates more significant engagement; therefore, it is recommended to focus on low-cost regionally licensed content while increasing investment on assets that secure universally available distribution rights. 
+
+### Strategic Dimension 3: Platform Content Anchors and Comfort Food Staples.
+
+Data shows that long-term subscriber retention is fundamentally anchored by evergreen "comfort food staples." Those shows can also serve as a hook for new subscribers. Massive audience are concentrated on top titles like **`r top_staple_name`** which floor or worst scenario of views ranked the **`r top_staple_floor`** million hours. These assets maintain high historical longevity of the platform content.  
+
+My recommendation is to secure or renew the licensing agreements for these content anchors and comfort food staples. That can keep subscribers retention and new subscription increases.
+
+### Strategic Dimension 4: Platform Analytics: Live Events vs. Pre-Taped Content
+
+While pre-recorded content takes the lead in the platform's content infrastructure at **`r pct_taped_hours` %** of total engagement hours, real-time Live Infrastructure investments like comedy roasts, awards, and sport shows are an exceptional engagement hook, securing **`r pct_live_hours`%** share. 
+
+Although pre-recorded content amounting to a big staggering **`r count_taped_titles`** of the total titles and which viewership peak reaches **` r pre_taped_peak_millions`** million hours, live specials represent **`r count_live_titles`** of the total titles and sum **` r live_peak_millions`** million hours in its viewership peak. Live content consolidates massive audience volumes into single, real-time windows. 
+
+My recommendation is to increase the budget allocation for live-events format specials in order to increase real-time platform engagement. 
+
+### Actionable Blueprint for 2027 Capital Allocation
+
+In sum, to safeguard Netflix's global objectives, I recommend to prioritize the allocation of resources for your 2027 and beyond budget on the following content: 
+
+1. *Episodic or seasonal content* over standardalones.   
+2. *Globally available content* over Regionally Registered content.
+3. *Anchors and comfort food staples* securing renewals and new subscriptions.
+4. *Live Events* to consolidate live engagement increases.
+
+Please let me know if you would like to set up a meeting to present and discuss the findings in this data analysis. 
+
+Sincerely,
+
+Carolina Lenes Arreola
+Data Analyst
+
+
+::: {.callout-note}
+
+Note that this report was developed with AI collaboration (Gemini). Its use was limited to instruction interpretation and elaboration on concepts such us Op-Ed, and for coding. No other generative AI tools were used.
+:::
+
+
