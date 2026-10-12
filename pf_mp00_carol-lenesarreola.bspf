@@ -1,0 +1,40 @@
+peer_feedback_assignment_1:
+  issue_number: 27
+  issue_owner: isabelacarvajalr
+  issue_ok: yes
+  issue_status: OK
+  overall_comments:
+    positive: |-
+      The selection of colors were fantastic.
+      The links working great and friendly font
+    negative: Maybe avoiding "Index" and too many "I"
+    advice: Rendering the changes and comparing the result with the current one
+  scores: []
+  mp_number: 0.0
+peer_feedback_assignment_2:
+  issue_number: 33
+  issue_owner: davidsebastianugalde
+  issue_ok: yes
+  issue_status: OK
+  overall_comments:
+    positive: Concise
+    negative: Introducing more elements like links or pictures, and more personal
+      information
+    advice: include an image, links, or more personal information
+  scores: []
+  mp_number: 0.0
+peer_feedback_assignment_3:
+  issue_number: 69
+  issue_owner: jl11005
+  issue_ok: no
+  issue_status: Could not parse issue title
+  overall_comments:
+    positive: It was a compelling About Me statement
+    negative: Adding an image or a headshot to make the profile more engaging, and
+      making sure the link works
+    advice: Adding an image or headshot or the Baruch map provided in class, rendering
+      and comparing the changes.
+  scores: []
+  mp_number: 0.0
+evaluator: carol-lenesarreola
+
