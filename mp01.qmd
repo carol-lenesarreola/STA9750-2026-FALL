@@ -2,13 +2,15 @@
   ---
   title: "STA9750 Mini-Project 01: What We Watched"
   author: "Carolina Lenes Arreola"
-  formal:
+  format:
     html:
       toc: true
       code-fold: true
   ---
   
-## Data Ingest and Acquisition
+# Data Ingest and Acquisition
+
+In this opportunity we will explore different patterns and discover some insights about the content in the NETFLIX big platform. For this purpose we will analyze the "What We Watched" NETFLIX reports. This data was acquired from Netflix’s corporate relations website, and the code to download it was provided by the instructor to avoid unnecessary issues with Netflix servers.   
 
 ```{r}
 #' Acquire Netflix What We Watched Reports
@@ -97,9 +99,6 @@ load_netflix_data <- function(){
            `Available Globally?`, 
            live_event)
 }
-## Data Cleaning and Preparation
-
-###It is convenient to highlight the fact that Netflix is not consistent with some of the data presented. The tittles of the shows or movies are not standardized; for example, we can find Seinfeld: Season 1 and Seinfeld: Season 3, but Stranger Things and Stranger Things 3. Similarly, for Runtime, some catalog entries do not have a published run time. For the total hours a title was viewed, shows with low hours (less than 50,000 hours of view time) are omitted.     
 
 library(tidyverse)
 NETFLIX_DATA = load_netflix_data()|>
@@ -117,8 +116,15 @@ NETFLIX_DATA = load_netflix_data()|>
   )
   
 ```
+## Data Cleaning and Preparation
+
+It is convenient to highlight the fact that Netflix is not consistent with some of the data presented. The tittles of the shows or movies are not standardized; for example, we can find Seinfeld: Season 1 and Seinfeld: Season 3, but Stranger Things and Stranger Things 3. Similarly, for Runtime, some catalog entries do not have a published run time. For the total hours a title was viewed, shows with low hours (less than 50,000 hours of view time) are omitted.
+
+So, we have renamed some columns, modified date format, and created new columns to better manage the data for our analysis.  
+
   
 ## Initial Data Exploration
+
 Before moving to our analysis, we will explore our data to make sure we guarantee quality control review and solve any anomalies early. 
 
 ```{r}
@@ -132,9 +138,22 @@ library(skimr)
 glimpse(NETFLIX_DATA)
 
 # 2. Review basic (univariate) summary statistics
+
+```
+
+After doing some of the data cleaning and skimming, we have a better overview about data structure and types. Our data can be reviewed over its univariate structure. 
+
+```{r}
 summary(NETFLIX_DATA)
 skim(NETFLIX_DATA)
 ```
+
+## Exploratory information
+
+### Range
+
+The data analyzed is concentrated in a period covering the dates of releases, we used the min() and max() built-in-functions to determine its range.
+
 ```{r}
 #| label: task5_questions_1to3
 #| echo: false
@@ -155,20 +174,23 @@ bridgerton_hours = NETFLIX_DATA |>
   pull(total_hours)
 bridgerton_formatted = round(bridgerton_hours/1e6, 1)
 ```
-### Scope of the report
 
-We need to establish a clear scope of the NETFLIX's historic positioning of shows and movies; in that sense, we evaluated the range of date we are focusing on, the different shows and movies, and the total number of hours viewers have spent watching shows from the *Bridgerton* universe.
+The range of the data goes from *`r min_date`* to *`r max_date`*.  
 
-### Variety of shows and movies Task 5 Q.1 and Q.2
+### Shows and movies covered
 
-The different shows and movies span a chronological footprint, capturing active consumer content entries tracking from **`r min_date`** up to modern releases observed in **`r max_date`**. Within this timeline, NETFLIX tracks give us a total of **`r total_unique_titles`** unique titles.
+Among that range and after reviewing the different unique titles, we found a total of *`r total_unique_titles`* in the NETFLIX report.
 
-### Total hours spent by viewers watching shows from the *Bridgerton* universe. Q3 
+### The Bridgerton universe
 
-When assesing budget optimization for future production cycles, looking at how single franchises compound engagement is highly informative. The critically aclaimed *Bridgerton* universe-spanning original flagsip seasons and its auxiliary spinoff series -has achieved massive structural stickness. Thoughout our tracking data, global subscribers spent a staggering **`r bridgerton_formatted` million hours** actively inmerse in the *Bridgerton* universe. This numbers show a high return on investment (ROI).
+Out of the total unique titles, one in particular have a universe of content itself. Although it is not a top title for anchors and comfort food content, viewers have spent *`r bridgerton_formatted`* hours watching shows from the *Bridgerton* universe.
+
+### Stranger Things
+
+Another title that calls our attention is the show **Stranger Things** which has 5 seasons. We analyzed how many hours viewers spent watching it. For this purpose we left out titles from companion promotional media like *Beyond Stranger Things*, *Tales from '85*, and *Stranger Things: Fireplace*.  
 
 ```{r}
-#| label: task5_questions_4to6
+#| label: task5_question_4
 #| echo: false
 #| message: false
 #| warning: false
@@ -183,7 +205,19 @@ stranger_things_data = NETFLIX_DATA |>
 
 st_hours = sum(stranger_things_data$hours_viewed, na.rm = TRUE)
 st_millions = round(st_hours / 1e6, 1)
+```
 
+Our exploration delivered a staggering **`r st_millions` million total hours** to the 5-season series.
+
+### Audience concentration
+
+We wanted to know what people watch the most, so we focused our attention to the Top 10 titles of the first half of 2026 (2026H1). 
+
+```{r}
+#| label: task5_question_5
+#| echo: false
+#| message: false
+#| warning: false
 # Q5: Calculate the percentage of watch time captured by the Top 10 titles in 2026H1
 data_2026h1 = NETFLIX_DATA |> 
   filter(period == "2026H1")
@@ -196,7 +230,19 @@ top_10_hours_2026h1 = data_2026h1 |>
   pull(top_hours)
 
 top_10_percentage = round((top_10_hours_2026h1 / total_hours_2026h1) * 100, 1)
+```
 
+Our conclusion points out that viewers dedicate **`r top_10_percentage`% of the total watch time** across all the platform.
+
+### Universal distribution 
+
+Viewers have different preferences; in NETFLIX catalog, global availability of a show or movie makes a significant difference. 
+
+```{r}
+#| label: task5_question_6
+#| echo: false
+#| message: false
+#| warning: false
 # Q6: Calculate global availability fractions (by title volume vs. hours viewed weighted)
 global_metrics = NETFLIX_DATA |>
   summarise(
@@ -213,36 +259,24 @@ global_metrics = NETFLIX_DATA |>
 pct_global_titles = global_metrics$pct_by_title
 pct_global_hours = global_metrics$pct_by_hours
 ```
-### *Stranger Things*
-The show *Stranger Things* has 5 seasons and we analyzed how many hours viewers spent watching it or this purpose we left out titles like *Beyond Stranger Things*, *Tales from '85*, and *Stranger Things: Fireplace*.  
-As mentioned, we isolated the engagement from companion promotional medial to have a better idea of the budget vs return of this show. Our result gave us a staggering **`r st_millions` million total hours** to the 5-season series. 
 
-### Audience concentration
+When analizing the volume of listings , **`r pct_global_titles`% of all catalog titles** are identified as globally available. Nevertheless, when we weight this distribution by the actual engagement, titles with global viewers lead with a **`r pct_global_hours`% of all hours viewed** on the platform. So, per asset or show, universally available content generates a significant higher engagement.  
 
-Now, if we focus our attention to the Top 10 titles of the first half of 2026, we can conclude that viewers dedicate **`r top_10_percentage`% of the total watch time** across all the platform. 
+## Advanced Exploratory Analysis including tables 
 
-### Universal distribution 
+As our scope expands to multi-variable queries, standalone data points are insufficient. We will use tables to deliver publication-quality insights, which includes: 1. Top-Performing Content by Period and Market Share, 2. How Netflix's catalog have changed in size over the periods, 3. Titles have had the most consistently high viewership across all periods ("comfort food" content), 4. Fraction of time spent on ‘shows’ vs movies, 5. Performance of live events compare to pre-taped content.  
 
-Global availability of a show or movie makes a significant difference in NETFLIX catalog. When analizing the volume of listings , **`r pct_global_titles`% of all catalog titles** are identified as globally available. Nevertheless, when we weight this distribution by the actual engagement, titles with global viewers lead with a **`r pct_global_hours`% of all hours viewed** on the platform. So, per asset or show, indicates that universally available content generates a significant higher engagement.   
+### 1. Top-Performing Content by Period and Market Share.
 
-## Task 6: Advanced Exploratory Analysis including tables 
+For a simpler overview of the different titles and the amount of total hours they were viewed, we will expand on the top title per period and the fraction of total viewership it captured. To isolate what drives peak platform engagement, we mapped the single highest-performing title within each six-month window. 
 
-As our analytical scope expands to multi-variable queries, standalone data points are insufficient. We will use tables to deliver publication-quality insights to Netflix senior leadership. 
-
-### Top-Performing Content by Period and Market Share
-
-To isolate what drives peak platform engagement, we mapped the single highest-performing title within each six-month window. Furthermore, we calculated that title's "market share"—the exact fraction of total platform viewing hours it captured during that specific period.
-
-## Exploratory Questions -Table Answers. Here we employ the `{gt}` package to construct structured, presentation-ready tables that surface deep performance trends across reporting periods.
-
-For a simpler overview of the different titles and the amount of total hours they were viewed, we will expand on the top title per period and the fraction of total viewership it captured. Therefore, we mapped the highest performing title withing each half or six-month period.  
+Furthermore, we calculated that title's "market share"—the exact fraction of total platform viewing hours it captured during that specific period.
 
 ```{r}
 #| label: task6_q1_top_titles
 #| message: false
 #| warning: false
 
-install.packages("gt")
 library(tidyverse)
 library(gt)
 
@@ -290,9 +324,15 @@ top_titles_table |>
   )
 ```
 
-### As a result, the flagship title performance across reporting periods reveals that there is a trend. When looking at the **Top Title in Each Period** table above, several insights emerge for leadership:
-* **Multi-season series or shows:** Most of the attention among viewers on Netflix fall into this category. There are thousands of titles gaining Over 0.9% to 1.35% of total platform attention. 
-* **Viewership concentration:** Although some titles vanish after certain period due to audience decrease, the percentage of watch time capture by the top shows remains stable from period to period. This situation could indicate that new releases are needed to keep this trends. 
+As a result, the flagship title performance across reporting periods reveals that there is a trend. When looking at the **Top Title in Each Period** table above, several insights emerge:
+
+* **Multi-season series or shows:** Most of the attention among viewers on Netflix fall into this category. 
+
+* **Viewership concentration:** Although some titles vanish after certain period due to audience decrease, the percentage of watch time capture by the top shows remains stable from period to period. 
+
+### 2. How Netflix's catalog have changed in size over the periods. 
+
+To evaluate how Netflix's catalog changed in size over the periods, we have risen the attention over *Regionally Restricted* and *Globally Available* content and their total run-time over every period. On the table below, we will see that there is an undisputed disproportion in share of viewer attention. 
 
 ```{r}
 #| label: task6-q2-catalog-trends
@@ -341,7 +381,12 @@ catalog_growth |>
     heading.background.color = "#98FF98" # continue with the mint layout
   )
 ```
-## To evaluate how Netflix's catalog changed in size over the periods, we have risen the attention over *Regionally Restricted* and *Globally Available* content and their total run-time over every period. Looking at the data presented in the table above, there is an undisputed disproportion in share of viewer attention. **Regional Restricted** content has the major number of titles, but **Globally Available** captures by far the majority of the watching hours spent. 
+
+**Regional Restricted** content has the major number of titles, but **Globally Available** captures by far the majority of the watching hours spent. 
+
+### 3. Titles with the most consistently high viewership across all periods ("comfort food" content).
+
+Data shows that long-term subscriber retention is fundamentally anchored by evergreen "comfort food staples," as follows.  
 
 ```{r} 
 #| label: task6-q3-comfort-food-staples 
@@ -367,7 +412,7 @@ comfort_food_analysis = NETFLIX_DATA |>
 top_staple_name = comfort_food_analysis$title[1]
 top_staple_floor = round(comfort_food_analysis$minimum_hours[1] / 1e6,1)
 
-# Step 3. Render the true Question 3 executive table
+# Step 3. Render the table
 comfort_food_analysis |> 
   select(title, periods_tracked, average_hours, minimum_hours) |> 
   gt() |> 
@@ -394,6 +439,12 @@ comfort_food_analysis |>
   )
 
 ```
+
+Massive audience are concentrated on top titles like **`r top_staple_name`** which floor or worst scenario of views ranked the **`r top_staple_floor`** million hours. 
+
+### 4. Fraction of time spent on ‘shows’ vs movies.
+
+Following, we are going to observe how many hours viewers spend on series or shows and movies. We deployed a four-hour runtime classification benchmark to distinguish multi-episode serialized season blocks from standalone features (movies).  
 
 ```{r}
 #| label: task6_q4_shows_vs_movies
@@ -422,8 +473,10 @@ format_fractions = classified_catalog |>
 ungroup()
 
 # Shortcuts for report (memo)
-avg_tv_share = round(mean(format_fractions$viewership_fraction[format_fractions$content_type == "TV Shows (Season Block)"]) * 100, 1)
+
 avg_movie_share = round(mean(format_fractions$viewership_fraction[format_fractions$content_type == "Movie / Standalone"]) * 100, 1)
+
+avg_tv_share = 100 - avg_movie_share
 
 # Step 3. Rendering a presentation table
 
@@ -453,6 +506,13 @@ format_fractions |>
     heading.background.color = "#76C1B1"
   )
 ```
+
+As we can see, viewers are concentrating their attention on TV Shows blocks. Across every tracked reporting interval, seasonal TV Show blocks consistently command an average of **`r avg_tv_share`%** of global platform viewing hours. Conversely, traditional standalone movies carry a mere **`r avg_movie_share`%** share of the platform consumption time.
+
+### 5. Performance of live events compare to pre-taped content.
+
+As we will see in the table below, the amount of pre-recorded content surpasses live content. However, the engagement is contrary to the content allocation.     
+
 ```{r}
 #| label: task6_q5_live_vs_taped
 #| message: false
@@ -482,11 +542,12 @@ live_vs_taped_summary = classified_live_data |>
   )
 
 # Step 3. Shortcuts for report (memo)
+# Engagement
 pct_live_hours = round((live_vs_taped_summary$average_views[live_vs_taped_summary$content_format == "Live Event / Special"] / sum(live_vs_taped_summary$average_views)) * 100, 1)
 
 pct_taped_hours = round((live_vs_taped_summary$average_views[live_vs_taped_summary$content_format == "Pre-taped Content"] / sum(live_vs_taped_summary$average_views)) * 100, 1)
 
-
+# Number of titles by type of content (pre-recorded vs live)
 count_live_titles = live_vs_taped_summary$total_titles[live_vs_taped_summary$content_format == "Live Event / Special"] 
 count_taped_titles = live_vs_taped_summary$total_titles[live_vs_taped_summary$content_format == "Pre-taped Content"]
 
@@ -520,14 +581,20 @@ live_vs_taped_summary |>
     heading.background.color = "#5A738E"
   )
 ```
-## *Corporate Strategy memo*
+
+Pre-recorded content amounts to a staggering **`r count_taped_titles`** of the total titles and which viewership peak reaches **`r pre_taped_peak_millions`** million hours; live specials represent **`r count_live_titles`** of the total titles and sum **`r live_peak_millions`** million hours in its viewership peak. 
+
+It's clear that pre-recorded content takes the lead in the platform's content infrastructure at **`r pct_taped_hours` %** of total engagement hours, however, real-time content (comedy roasts, awards, and sport shows) secures **`r pct_live_hours`%** share. 
+
+
+# *Corporate Strategy memo*
 
 **TO:** Netflix Senior Leadership & Executive Committee  
-**FROM:** Carolina Lenes Arreola 
+**FROM:** Carolina Lenes Arreola
 **DATE:** October 12, 2026  
 **SUBJECT:** Data-driven portfolio optimization for Netflix's original content strategy for 2027 and beyond. 
 
-### Executive Summary
+## Executive Summary
 
 To optimized resource allocation, maximize profitability, and improve platform performance metrics, this brief report evaluates the core data features that drive Netflix content environment. These features include: viewership patterns, program titles, runtimes, the total hours consumed, the original release windows, global distribution rights, and live or pre-recorded content. This memo focuses in four Strategic Dimensions: Format Segmentation (Series vs. Movies), Catalog Architecture and Licensing Evolution (Regionally licensed and Globally available content), Platform Content Anchors and Comfort Food Staples, and Platform Analytics: Live Events vs. Pre-Taped Content. 
 
@@ -557,7 +624,7 @@ My recommendation is to secure or renew the licensing agreements for these conte
 
 While pre-recorded content takes the lead in the platform's content infrastructure at **`r pct_taped_hours` %** of total engagement hours, real-time Live Infrastructure investments like comedy roasts, awards, and sport shows are an exceptional engagement hook, securing **`r pct_live_hours`%** share. 
 
-Although pre-recorded content amounting to a big staggering **`r count_taped_titles`** of the total titles and which viewership peak reaches **` r pre_taped_peak_millions`** million hours, live specials represent **`r count_live_titles`** of the total titles and sum **` r live_peak_millions`** million hours in its viewership peak. Live content consolidates massive audience volumes into single, real-time windows. 
+Although pre-recorded content amounting to a big staggering **`r count_taped_titles`** of the total titles and which viewership peak reaches **`r pre_taped_peak_millions`** million hours, live specials represent **`r count_live_titles`** of the total titles and sum **`r live_peak_millions`** million hours in its viewership peak. Live content consolidates massive audience volumes into single, real-time windows. 
 
 My recommendation is to increase the budget allocation for live-events format specials in order to increase real-time platform engagement. 
 
@@ -578,9 +645,12 @@ Carolina Lenes Arreola
 Data Analyst
 
 
-::: {.callout-note}
+## AI Usage Statement
 
-Note that this report was developed with AI collaboration (Gemini). Its use was limited to instruction interpretation and elaboration on concepts such us Op-Ed, and for coding. No other generative AI tools were used.
+::: {.callout-note title="AI Usage Statement" collapse="true"}
+
+Note that this report was developed with AI collaboration (Gemini). Its use was limited to instruction interpretation and elaboration on concepts such us Op-Ed, NB, and for coding. No other generative AI tools were used.
+
 :::
 
 
