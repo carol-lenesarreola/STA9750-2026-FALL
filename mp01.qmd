@@ -1,12 +1,11 @@
-
-  ---
+---
   title: "STA9750 Mini-Project 01: What We Watched"
   author: "Carolina Lenes Arreola"
   format:
     html:
       toc: true
       code-fold: true
-  ---
+---
   
 # Data Ingest and Acquisition
 
@@ -380,9 +379,11 @@ catalog_growth |>
     table.width = pct(100),
     heading.background.color = "#98FF98" # continue with the mint layout
   )
+total_regional_titles = sum(catalog_growth$title_count[catalog_growth$rights_status == "Regionally Restricted"], na.rm = TRUE)
+total_global_titles = sum(catalog_growth$title_count[catalog_growth$rights_status == "Globally Available"], na.rm = TRUE)
 ```
 
-**Regional Restricted** content has the major number of titles, but **Globally Available** captures by far the majority of the watching hours spent. 
+**Regional Restricted** content has the major number of titles, but **Globally Available** captures by far the majority of the watching hours spent. Across the tracked operational periods, the data includes a cumulative total of **`r total_regional_titles`** regionally restricted listings, compared to **`r total_global_titles`** universally accessible titles. 
 
 ### 3. Titles with the most consistently high viewership across all periods ("comfort food" content).
 
@@ -590,7 +591,7 @@ It's clear that pre-recorded content takes the lead in the platform's content in
 # *Corporate Strategy memo*
 
 **TO:** Netflix Senior Leadership & Executive Committee  
-**FROM:** Carolina Lenes Arreola
+**FROM:** Carolina Lenes Arreola    
 **DATE:** October 12, 2026  
 **SUBJECT:** Data-driven portfolio optimization for Netflix's original content strategy for 2027 and beyond. 
 
@@ -649,7 +650,7 @@ Data Analyst
 
 ::: {.callout-note title="AI Usage Statement" collapse="true"}
 
-Note that this report was developed with AI collaboration (Gemini). Its use was limited to instruction interpretation and elaboration on concepts such us Op-Ed, NB, and for coding. No other generative AI tools were used.
+Note that this report was developed with AI collaboration (Gemini). Its use was limited to instruction interpretation and elaboration on some of the jargon used and for coding. No other generative AI tools were used.
 
 :::
 
