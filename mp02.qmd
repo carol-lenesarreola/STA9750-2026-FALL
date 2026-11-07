@@ -785,20 +785,18 @@ Grab your front-row seat as we hand out the trophies for the most legendary gree
 
 ---
 
-### 📊 Media Supplements for Winners!
+### 📊 Media Supplements for Winners. The Baseline Comparison in graphs!
 
 The National Transit Board has cleared the following high-density visual supplements for inclusion in nightly news broadcasts and digital media packages. These illustrations display the carbon mitigation data in both absolute and relative terms, providing a self-contained baseline comparison against standard private transportation methods.
 
-Here is our Greenest Agency and the Most Emissions Avoided!
 ```{r}
 #| echo: false
 #| message: false
 #| warning: false
 #| layout-ncol: 1
-#| fig-cap: "Media Supplements for Nightly Broadcast"
 #| fig-subcap: 
-#|   - "Illustration 2: Most emissions avoided"
 #|   - "Illustration 1: Greenest agency"
+#|   - "Illustration 2: Most emissions avoided"
 
 library(ggplot2)
 library(dplyr)
@@ -822,44 +820,7 @@ podium_data <- top_carbon_savers |>
 # =========================================================================
 # 2. ASSIGN INDIVIDUAL GRAPH LAYOUTS
 # =========================================================================
-
-# Graph A: Absolute Volume Saved (Matches Illustration 2)
-plot_podium <- ggplot(podium_data, aes(x = podium_position, y = emissions_saved_millions)) +
-  geom_col(aes(fill = podium_position), width = 0.7, show.legend = FALSE) +
-  scale_fill_manual(values = c(
-    "MTA NYC Transit"   = "#0D9488",  
-    "MTA LIRR"          = "#06B6D4",  
-    "MTA Metro-North"   = "#2DD4BF"   
-  )) +
-  geom_text(
-    data = filter(podium_data, Clean_Name == "MTA NYC Transit"),
-    aes(label = "🏆", y = emissions_saved_millions + 0.35),
-    size = 11, vjust = 0
-  ) +
-  geom_text(
-    aes(label = paste0(round(emissions_saved_millions, 2), "M Tons"), y = emissions_saved_millions + 0.05),
-    vjust = -0.4, fontface = "bold", size = 3.5
-  ) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  theme_minimal(base_size = 11) +
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank(),
-    plot.title = element_text(face = "bold", size = 13, hjust = 0.5),
-    plot.subtitle = element_text(size = 10, hjust = 0.5, color = "gray30"),
-    plot.caption = element_text(hjust = 0.5, size = 8, face = "italic", color = "gray40"),
-    axis.text.x = element_text(face = "bold", size = 11, color = "black"),
-    axis.text.y = element_blank(),
-    axis.title.y = element_blank()
-  ) +
-  labs(
-    title = "National Carbon Abatement Championship",
-    subtitle = "Top 3 US transit networks ranked by absolute net CO2 diverted from the atmosphere",
-    caption = "Source: National Transit Database (NTD) & US Energy Information Administration (EIA) | The big winner is NY State! ☺",
-    x = NULL
-  )
-
-# Graph B: Relative Ratios Saved (Matches Illustration 1)
+# Graph A: Relative Ratios Saved (Matches Illustration 1)
 comparison_data <- data.frame(
   Entity = c("Standard Passenger Car\n(Private Baseline)", "National Transit Median", "City of Seattle", "Anaheim Transportation\nNetwork"),
   Footprint = c(0.874, 0.450, 0.057, 0.015),
@@ -889,14 +850,51 @@ plot_comparison <- ggplot(comparison_data, aes(x = reorder(Entity, -Footprint), 
     caption = "Source: National Transit Database (NTD) & US EPA CAFE Standards (22.2 MPG baseline)"
   )
 
+# Graph B: Absolute Volume Saved (Matches Illustration 2)
+plot_podium <- ggplot(podium_data, aes(x = podium_position, y = emissions_saved_millions)) +
+  geom_col(aes(fill = podium_position), width = 0.7, show.legend = FALSE) +
+  scale_fill_manual(values = c(
+    "MTA NYC Transit"   = "#0D9488",  
+    "MTA LIRR"          = "#06B6D4",  
+    "MTA Metro-North"   = "#2DD4BF"   
+  )) +
+  geom_text(
+    data = filter(podium_data, Clean_Name == "MTA NYC Transit"),
+    aes(label = "🏆", y = emissions_saved_millions + 0.35),
+    size = 11, vjust = 0
+  ) +
+  geom_text(
+    aes(label = paste0(round(emissions_saved_millions, 2), "M Tons"), y = emissions_saved_millions + 0.05),
+    vjust = -0.4, fontface = "bold", size = 3.5
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 13, hjust = 0.5),
+    plot.subtitle = element_text(size = 10, hjust = 0.5, color = "gray30"),
+    plot.caption = element_text(hjust = 0.5, size = 8, face = "italic", color = "gray40"),
+    axis.text.x = element_text(face = "bold", size = 11, color = "black"),
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank()
+  ) +
+  labs(
+    title = "The Carbon Savers",
+    subtitle = "Top 3 US transit networks ranked by absolute net CO2 diverted from the atmosphere",
+    caption = "Source: National Transit Database (NTD) & US Energy Information Administration (EIA) | The big winner is NY State! ☺",
+    x = NULL
+  )
+
+
 # =========================================================================
 # 3. PRINT BOTH GRAPHICS IN ORDER
 # =========================================================================
-print(plot_podium)
 print(plot_comparison)
+print(plot_podium)
 ```
 
-We hope you enjoyed the gala!!!🏆🏆🏆🛑
+**We hope you enjoyed the gala!!!🏆🏆🏆🛑**
 
 **MEDIA CONTACT**:  
 Carolina Lenes  
