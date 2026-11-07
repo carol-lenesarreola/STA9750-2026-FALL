@@ -637,7 +637,7 @@ EMISSIONS_TABLE <- emissions_base_table |>
 
 ```
 
-**Awards for**:
+# Winning categories 
 
 ### 1. The Greenest Transit Agency
 ```{r}
@@ -693,66 +693,6 @@ top_carbon_savers |>
 
 ```
 
-```{r}
-# PODIUM CHART WITH TROPHY CUP. Just for FUN! ---
-
-# 1. Clean the names slightly and assign formal podium positions for a 3-step stage
-podium_data <- top_carbon_savers |> 
-  slice_max(co2_avoided_tons, n = 3) |> 
-  mutate(
-    Clean_Name = case_when(
-      str_detect(agency_name, "New York City Transit") ~ "MTA NYC Transit",
-      str_detect(agency_name, "Long Island") ~ "MTA LIRR",
-      str_detect(agency_name, "Metro-North") ~ "MTA Metro-North"
-    ),
-    # X-axis factor levels ordered physically: Position 2 (Left), Position 1 (Center), Position 3 (Right)
-    podium_position = factor(Clean_Name, levels = c("MTA LIRR", "MTA NYC Transit", "MTA Metro-North")),
-    emissions_saved_millions = co2_avoided_tons / 1000000
-  )
-
-# 2. Build the structural podium graph
-ggplot(podium_data, aes(x = podium_position, y = emissions_saved_millions)) +
-  # Draw the individual podium blocks with a clean corporate slate-teal theme
-  geom_col(aes(fill = podium_position), width = 0.7, show.legend = FALSE) +
-  scale_fill_manual(values = c(
-    "MTA NYC Transit"   = "#0D9488",  # Gold/1st Place deep teal
-    "MTA LIRR"          = "#06B6D4",  # Silver/2nd Place bright cyan
-    "MTA Metro-North"   = "#2DD4BF"   # Bronze/3rd Place light teal
-  )) +
-  # Place a literal Trophy Cup emoji dynamically over the #1 winner (NYC Transit)
-  geom_text(
-    data = filter(podium_data, Clean_Name == "MTA NYC Transit"),
-    aes(label = "🏆", y = emissions_saved_millions + 0.40),
-    size = 11,
-    vjust = 0
-  ) +
-  # Place numeric baseline markings directly inside or right above the blocks
-  geom_text(
-    aes(label = paste0(round(emissions_saved_millions, 2), "M Tons"), y = emissions_saved_millions + 0.05),
-    vjust = -0.4, 
-    fontface = "bold", 
-    size = 3.5
-  ) +
-  # Format axes to emulate a clean awards stage
-  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  theme_minimal(base_size = 11) +
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank(),
-    plot.title = element_text(face = "bold", size = 13, hjust = 0.5),
-    plot.subtitle = element_text(size = 10, hjust = 0.5, color = "gray30"),
-    axis.text.x = element_text(face = "bold", size = 11, color = "black"),
-    axis.text.y = element_blank(),
-    axis.title.y = element_blank(),
-    plot.caption = element_text(hjust = 0.3, size = 9, face = "italic", color = "gray30"),
-  ) +
-  labs(
-    title = "Top Carbon Savers",
-    subtitle = "Top 3 US transit networks ranked by net greenhouse gases diverted from atmosphere",
-    caption = "☻ The big winner is not only the environment but also New York State ☺",
-    x = NULL
-  )
-```
 
 ### 3. The Local Efficiency Marvel
 ```{r}
@@ -845,66 +785,45 @@ Grab your front-row seat as we hand out the trophies for the most legendary gree
 
 ---
 
-### 📊 MEDIA SUPPLEMENTS FOR IMMEDIATE BROADCAST
+### 📊 Media Supplements for Winners!
 
 The National Transit Board has cleared the following high-density visual supplements for inclusion in nightly news broadcasts and digital media packages. These illustrations display the carbon mitigation data in both absolute and relative terms, providing a self-contained baseline comparison against standard private transportation methods.
 
-Here is our Greenest Agency!
+Here is our Greenest Agency and the Most Emissions Avoided!
 ```{r}
-
 #| echo: false
 #| message: false
 #| warning: false
-
+#| layout-ncol: 1
+#| fig-cap: "Media Supplements for Nightly Broadcast"
+#| fig-subcap: 
+#|   - "Illustration 2: Most emissions avoided"
+#|   - "Illustration 1: Greenest agency"
 
 library(ggplot2)
+library(dplyr)
+library(stringr)
 
-# --- MEDIA SUPPLEMENT #2: PUBLIC TRANSIT VS. PRIVATE TRANSPORTATION ---
-# Create a temporary comparison dataset featuring a standard single-occupancy car baseline
-comparison_data <- data.frame(
-  Entity = c("Standard Passenger Car\n(Private Baseline)", "National Transit Median", "City of Seattle", "Anaheim Transportation\nNetwork"),
-  Footprint = c(0.874, 0.450, 0.057, 0.015),
-  Type = c("Private", "Transit", "Transit", "Transit")
-)
-
-plot_comparison <- ggplot(comparison_data, aes(x = reorder(Entity, -Footprint), y = Footprint, fill = Type)) +
-  geom_col(width = 0.6, show.legend = FALSE) +
-  scale_fill_manual(values = c("Private" = "#EF4444", "Transit" = "#0D9488")) + # Red vs Green
-  geom_text(aes(label = paste0(round(Footprint, 3), " lbs")), hjust = -0.15, fontface = "bold", size = 3.5) +
-  coord_flip() +
-  scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
-  theme_minimal(base_size = 11) +
-  theme(
-    panel.grid.minor = element_blank(),
-    plot.title = element_text(face = "bold", size = 13),
-    plot.subtitle = element_text(size = 10, color = "gray30"),
-    plot.caption = element_text(hjust = 1, size = 8, face = "italic", color = "gray40"),
-    axis.text.y = element_text(face = "bold", color = "black"),
-    axis.title.x = element_text(face = "bold", size = 10)
-  ) +
-  labs(
-    title = "How Green is Public Transit?",
-    subtitle = "Lifecycle carbon footprint per individual passenger mile: Transit vs. Private Commute",
-    x = NULL,
-    y = "Pounds of CO2 per Passenger Mile (Lower is Better)",
-    caption = "Source: National Transit Database (NTD) & US EPA CAFE Standards (22.2 MPG baseline)"
+# =========================================================================
+# 1. RE-CREATE THE DATA PIPELINE FOR THE PODIUM (FIXES NOT FOUND ERROR)
+# =========================================================================
+podium_data <- top_carbon_savers |> 
+  slice_max(co2_avoided_tons, n = 3) |> 
+  mutate(
+    Clean_Name = case_when(
+      str_detect(agency_name, "New York City Transit") ~ "MTA NYC Transit",
+      str_detect(agency_name, "Long Island") ~ "MTA LIRR",
+      str_detect(agency_name, "Metro-North") ~ "MTA Metro-North"
+    ),
+    podium_position = factor(Clean_Name, levels = c("MTA LIRR", "MTA NYC Transit", "MTA Metro-North")),
+    emissions_saved_millions = co2_avoided_tons / 1000000
   )
 
-# Print both graphics sequentially into your document
-print(plot_comparison)
-```
+# =========================================================================
+# 2. ASSIGN INDIVIDUAL GRAPH LAYOUTS
+# =========================================================================
 
-Here is the Podium for the Carbon Savers!!
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-
-# MEDIA SUPPLEMENTS FOR NIGHTLY BROADCAST (PUBLICATION READY)
-
-library(ggplot2)
-
-# MEDIA SUPPLEMENT #1: THE CARBON ABATEMENT CHAMPIONSHIP PODIUM 
+# Graph A: Absolute Volume Saved (Matches Illustration 2)
 plot_podium <- ggplot(podium_data, aes(x = podium_position, y = emissions_saved_millions)) +
   geom_col(aes(fill = podium_position), width = 0.7, show.legend = FALSE) +
   scale_fill_manual(values = c(
@@ -934,16 +853,57 @@ plot_podium <- ggplot(podium_data, aes(x = podium_position, y = emissions_saved_
     axis.title.y = element_blank()
   ) +
   labs(
-    title = "Carbon Savers",
+    title = "National Carbon Abatement Championship",
     subtitle = "Top 3 US transit networks ranked by absolute net CO2 diverted from the atmosphere",
     caption = "Source: National Transit Database (NTD) & US Energy Information Administration (EIA) | The big winner is NY State! ☺",
     x = NULL
   )
+
+# Graph B: Relative Ratios Saved (Matches Illustration 1)
+comparison_data <- data.frame(
+  Entity = c("Standard Passenger Car\n(Private Baseline)", "National Transit Median", "City of Seattle", "Anaheim Transportation\nNetwork"),
+  Footprint = c(0.874, 0.450, 0.057, 0.015),
+  Type = c("Private", "Transit", "Transit", "Transit")
+)
+
+plot_comparison <- ggplot(comparison_data, aes(x = reorder(Entity, -Footprint), y = Footprint, fill = Type)) +
+  geom_col(width = 0.6, show.legend = FALSE) +
+  scale_fill_manual(values = c("Private" = "#EF4444", "Transit" = "#0D9488")) + 
+  geom_text(aes(label = paste0(round(Footprint, 3), " lbs")), hjust = -0.15, fontface = "bold", size = 3.5) +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 13),
+    plot.subtitle = element_text(size = 10, color = "gray30"),
+    plot.caption = element_text(hjust = 1, size = 8, face = "italic", color = "gray40"),
+    axis.text.y = element_text(face = "bold", color = "black"),
+    axis.title.x = element_text(face = "bold", size = 10)
+  ) +
+  labs(
+    title = "How Green is Public Transit?",
+    subtitle = "Lifecycle carbon footprint per individual passenger mile: Transit vs. Private Commute",
+    x = NULL,
+    y = "Pounds of CO2 per Passenger Mile (Lower is Better)",
+    caption = "Source: National Transit Database (NTD) & US EPA CAFE Standards (22.2 MPG baseline)"
+  )
+
+# =========================================================================
+# 3. PRINT BOTH GRAPHICS IN ORDER
+# =========================================================================
 print(plot_podium)
+print(plot_comparison)
 ```
 
-
 We hope you enjoyed the gala!!!🏆🏆🏆🛑
+
+**MEDIA CONTACT**:  
+Carolina Lenes  
+The Data Analysis & Eco-Logistics Press Office  
+Document Generated Seamlessly via R Studio & Quarto Compiler Pipelines using National Transit Database records.
+
+
 
 ***
 
