@@ -516,14 +516,17 @@ ggplot(top_5_upt, aes(x = reorder(Label, total_upt), y = total_upt)) +
     subtitle = "Ranked by cumulative Unlinked Passenger Trips (UPT)",
     x = "Transit Agency & Modality", 
     y = "Total Annual Trips (in Millions)",
-    caption = "*Note: Unlinked Passanger Trips (UPT) measures total boarding density by counting every individual time a passanger steps onto a vehicle, regardless of transfers.") +
+    caption = stringr::str_wrap("*Note: Unlinked Passenger Trips (UPT) measures total boarding density by counting every individual time a passenger steps onto a vehicle, regardless of transfers.", width = 80)
+  ) +
   theme(
     plot.title = element_text(face = "bold", size = 13),
     axis.text.y = element_text(size = 9, face = "bold"),
     axis.text.x = element_text(size = 10),
-    plot.caption = element_text(size = 8, italic = TRUE, color = "#4B5563", hjust = 0),
+    # Changed 'italic = TRUE' to 'face = "italic"' on line 524 to prevent formatting errors
+    plot.caption = element_text(size = 8, face = "italic", color = "#4B5563", hjust = 0),
     panel.grid.minor = element_blank()
   )
+
   
 ```
 • The five transit services with the most UPT annually correspond to the states of New York, with the 1-2 podium, California in 3rd place, then Chicago, and lastly Washington. 
@@ -634,7 +637,7 @@ EMISSIONS_TABLE <- emissions_base_table |>
     
     total_co2_emissions = rowSums(across(c(co2_diesel, co2_gasoline, co2_cng, co2_electric)), na.rm = TRUE)
   )
-
+EMISSIONS_TABLE
 ```
 
 # Winning categories 
@@ -664,7 +667,7 @@ greenest_by_mile <- agency_efficiency |>
 
 greenest_by_mile
 ```
-
+* **The Calculation Method:** Calculated by dividing total lifecycle grid and fuel carbon outputs (lbs) by cumulative passenger miles traveled to establish an efficiency ratio.
 
 ### 2. Most Emissions Avoided
 ```{r}
@@ -684,7 +687,8 @@ emissions_avoided_table <- agency_efficiency |>
   )
 
 top_carbon_savers <- emissions_avoided_table |> 
-  slice_max(co2_avoided_tons, n = 5)
+  slice_max(co2_avoided_tons, n = 5) |>
+  mutate(agency_name = str_replace(agency_name, ", dba:.*", ""))
 
 # Here are the winners!
 top_carbon_savers |> 
@@ -693,8 +697,9 @@ top_carbon_savers |>
 
 ```
 
+* **The Calculation Method:** Calculated by using US CAFE fuel standards (assuming a consumer passenger fleet baseline of 22.2 MPG at 19.4 lbs of CO2 per gallon) to determine the total gallons and emissions if all passenger miles were driven in single-occupancy cars, then subtracting the agency's actual transit footprint.
 
-### 3. The Local Efficiency Marvel
+### 3. The Local Efficiency Marvel (A custom category)
 ```{r}
 
 # To rank raw modes fairly before aggregation, we go back to the row-level data
@@ -712,10 +717,11 @@ ultra_green_winner <- mode_efficiency_base |>
 ultra_green_winner |> 
   select(agency_name, mode, state, co2_per_passenger_mile)
 ```
-• The third award, *The Local Efficiency Marvel*, recognizes Washington State’s Skagit Transit (Demand Response). This localized system successfully optimized its on-demand routing and vehicle occupancy rates to achieve an exceptionally low climate footprint of just 0.015 pounds of $CO_{2}$ per passenger mile traveled.
+* This localized system successfully optimized its on-demand routing and vehicle occupancy rates to achieve an exceptionally low climate footprint of just 0.015 pounds of $CO_{2}$ per passenger mile traveled.
 
+* **The Calculation Method:** Evaluated at the granular vehicle-mode layer to identify localized transit loops operating at maximum micro-occupancy efficiency.
 
-### 4. The Carbon Heavyweight Award ("Worst Of" Efficiency)
+### 4. The Carbon Heavyweight Award ("Worst Of" or the "Name and Shame" Efficiency)
 ```{r}
 
 mode_efficiency_clean <- EMISSIONS_TABLE |> 
@@ -733,8 +739,9 @@ carbon_heavyweight_winner |>
 
 ```
 
-• The *Carbon Heavyweight* award ("Worst Of" category) is designated to the Metropolitan Transit Authority of Harris County, Texas. This regional system records the nation's steepest rate of actual emissions per passenger mile traveled. This profile typically occurs across sprawling Texas metropolitan corridors where extensive transit routes carry low average rider densities, further compounded by an underlying local power grid heavily reliant on traditional fossil energy assets.
+* This regional system records the nation's steepest rate of actual emissions per passenger mile traveled. This profile typically occurs across sprawling Texas metropolitan corridors where extensive transit routes carry low average rider densities, further compounded by an underlying local power grid heavily reliant on traditional fossil energy assets.
 
+*   **The Calculation Method:** Isolating functioning passenger loops with the steepest lifecycle greenhouse gas ratios per passenger mile traveled, removing empty lines or division-by-zero math traps.
 
 ---
 
@@ -757,38 +764,60 @@ Grab your front-row seat as we hand out the trophies for the most legendary gree
 
 ---
 
-### 🏆 1. THE GREENEST TRANSIT AGENCY AWARD
-*   **The Calculation Method:** Calculated by dividing total lifecycle grid and fuel carbon outputs (lbs) by cumulative passenger miles traveled to establish an efficiency ratio.
-*   **Gold Medal Winner:** `r greenest_by_mile$agency_name` (`r greenest_by_mile$state`) 🥇
-*   **Silver Medal Winner:** `r greenest_by_mile$agency_name` (`r greenest_by_mile$state`) 🥈
-*   **The Baseline Comparison:** If environmental efficiency were an Olympic sprint, California’s top agency just shattered the world record. This absolute powerhouse cruises at a microscopic **`r round(greenest_by_mile$emissions_per_passenger_mile, 3)` lbs of CO2 per passenger mile**, with the City of Seattle grabbing the silver at an impressive **`r round(greenest_by_mile$emissions_per_passenger_mile, 3)` lbs**. To put this in perspective, the national median transit agency scores at **0.463 lbs of CO2 per passenger mile**—meaning Anaheim operates at over **30 times the efficiency** of the average American public transit benchmark!
+#### 🏆 1. THE GREENEST TRANSIT AGENCY AWARD
 
-### 🏆 2. THE MOST EMISSIONS AVOIDED AWARD (THE TRANSIT LANDSLIDE)
-*   **The Calculation Method:** Calculated by using US CAFE fuel standards (assuming a consumer passenger fleet baseline of 22.2 MPG at 19.4 lbs of CO2 per gallon) to determine the total gallons and emissions if all passenger miles were driven in single-occupancy cars, then subtracting the agency's actual transit footprint.
-*   **Grand Champion:** `r top_carbon_savers$agency_name` (`r top_carbon_savers$state`) 👑
-*   **The Podium Sweep:** `r top_carbon_savers$agency_name` & `r top_carbon_savers$agency_name`
-*   **The Breakdown:** New York State didn't just win this category; they single-handedly built a penthouse suite on top of the podium. By convincing millions of commuters to ditch single-occupancy cars, the **MTA New York City Transit**—the subway and bus system operating inside the five boroughs of New York City—clinched the absolute #1 spot, saving a jaw-dropping **`r format(round(top_carbon_savers$co2_avoided_tons), big.mark = ",")` tons of CO2** from entering our atmosphere. 
+Drumroll please; and the winners are...
 
-*(**FUN FACT:** Next time you find yourself complaining about a New York transit delay, please save your energy—literally! Just remember that this network is single-handedly running the most massive carbon shield in the country. It could always be worse; you could be stuck in a single-occupancy traffic jam instead! 😂)*
+*   **Gold Medal Winner:** `r greenest_by_mile$agency_name[1]` (`r greenest_by_mile$state[1]`)!!! 🥇
+*   **Silver Medal Winner:** `r greenest_by_mile$agency_name[2]` (`r greenest_by_mile$state[2]`)!!! 🥈
 
-*   **The Baseline Comparison:** While the median transit agency in America has a net carbon avoidance score of **-14.2 tons** (due to empty buses running off-peak routes), NYC Transit single-handedly runs a multi-million-ton planetary defense shield. With the LIRR grabbing 2nd place (`r format(round(top_carbon_savers$co2_avoided_tons), big.mark = ",")` tons) and Metro-North taking 3rd (`r format(round(top_carbon_savers$co2_avoided_tons), big.mark = ",")` tons), the wider state-level NY transit grid is officially the ultimate global warming shield. *New York, take a bow!*
+Shout-outs to California and Washington! Bravo.
 
-### 🏆 3. THE "LOCAL EFFICIENCY MARVEL" AWARD (Our Custom Category)
-*   **The Calculation Method:** Evaluated at the granular vehicle-mode layer to identify localized transit loops operating at maximum micro-occupancy efficiency.
-*   **The Micro-Champ:** `r ultra_green_winner$agency_name` — `r ultra_green_winner$mode` Line (`r ultra_green_winner$state`) 🚐⚡
-*   **The Baseline Comparison:** Washington State's specialized transit loops achieved data immortality, generating a mind-blowing **`r round(ultra_green_winner$co2_per_passenger_mile, 3)` lbs of CO2 per passenger mile**. Compared to the national median transit baseline of **0.463 lbs**, this specialized demand-response fleet moves community residents across town with a footprint that leaves traditional commuter lines completely in the dust.
+If environmental efficiency were an Olympic sprint, California’s top agency just shattered the world record. This absolute powerhouse cruises at a microscopic **`r round(greenest_by_mile$emissions_per_passenger_mile[1], 3)` lbs of CO2 per passenger mile**, with the City of Seattle grabbing the silver at an impressive **`r round(greenest_by_mile$emissions_per_passenger_mile[2], 3)` lbs**. To put this in perspective, the national median transit agency scores at **0.463 lbs of CO2 per passenger mile**, meaning Anaheim operates at over **30 times the efficiency** of the average American public transit benchmark!
 
-### 🛑 4. THE "CARBON HEAVYWEIGHT" AWARD (The "Name and Shame" Category)
-*   **The Calculation Method:** Isolating functioning passenger loops with the steepest lifecycle greenhouse gas ratios per passenger mile traveled, removing empty lines or division-by-zero math traps.
-*   **The Title Goes To:** `r carbon_heavyweight_winner$agency_name` (`r carbon_heavyweight_winner$state`) 🥊
-*   **The Baseline Comparison:** Because of massive, sprawling regional routes where giant motor buses sometimes carry only a handful of riders—paired with an underlying energy layout heavily reliant on traditional fossil assets—they record the nation's heaviest carbon ratio at **`r round(carbon_heavyweight_winner$co2_per_passenger_mile, 2)` lbs of CO2 per passenger mile**. With this metric sitting significantly higher than the standard national transit baseline of **0.463 lbs**, consider this a friendly, data-driven nudge that it’s time to swap out those old engines for some shiny new electric fleets!
+Now, let's continue with another category... Drumroll, please! 
+
+#### 🏆 2. THE MOST EMISSIONS AVOIDED AWARD   
+
+
+The **grand champion** in this category is... **`r top_carbon_savers$agency_name[1]` (`r top_carbon_savers$state[1]`) 👑**
+
+But that's not it! We have **The Podium Sweep** here. The second and third places go to... `r top_carbon_savers$agency_name[2]` & `r top_carbon_savers$agency_name[3]`.
+
+New York State didn't just win this category; they single-handedly built a penthouse suite on top of the podium. By convincing millions of commuters to ditch single-occupancy cars, the **MTA New York City Transit** -the subway and bus system operating inside the five boroughs of New York City- clinched the absolute #1 spot, saving a jaw-dropping **`r format(round(top_carbon_savers$co2_avoided_tons[1]), big.mark = ",")` tons of CO2** from entering our atmosphere. 
+
+So, next time you find yourself complaining about a New York transit delay, please **save your energy** -literally! Just remember that this network is single-handedly running the most massive carbon shield in the country. It could always be worse; you could be stuck in a single-occupancy traffic jam instead! 😂
+
+While the median transit agency in America has a net carbon avoidance score of **-14.2 tons** (due to empty buses running off-peak routes), NYC Transit single-handedly runs a multi-million-ton planetary defense shield. With the LIRR grabbing 2nd place (`r format(round(top_carbon_savers$co2_avoided_tons[2]), big.mark = ",")` tons) and Metro-North taking 3rd (`r format(round(top_carbon_savers$co2_avoided_tons[3]), big.mark = ",")` tons), the wider state-level NY transit grid is officially the ultimate global warming shield. *New York, take a bow!*
+
+
+Our third champion is coming next!
+
+#### 🏆 3. THE "LOCAL EFFICIENCY MARVEL" AWARD 
+
+Goes to... the micro-champ: **`r ultra_green_winner$agency_name[1]` - `r ultra_green_winner$mode[1]` Line (`r ultra_green_winner$state[1]`) 🚐⚡**
+
+Shout-outs to Washington, again!
+
+Washington State's specialized transit loops achieved data immortality, generating a mind-blowing **`r round(ultra_green_winner$co2_per_passenger_mile[1], 3)` lbs of CO2 per passenger mile**. Compared to the national median transit baseline of **0.463 lbs**, this specialized demand-response fleet moves community residents across town with a footprint that leaves traditional commuter lines completely in the dust.
+
+Oh, boy! Let me tell you, no one wants to win our next category. However, here we go.  
+
+#### 🛑 4. THE "CARBON HEAVYWEIGHT" AWARD
+
+Our "Name and Shame" award goes to...`r carbon_heavyweight_winner$agency_name[1]` (`r carbon_heavyweight_winner$state[1]`) 🥊
+
+Booo, Texas!
+
+Because of massive, sprawling regional routes where giant motor buses sometimes carry only a handful of riders, paired with an underlying energy layout heavily reliant on traditional fossil assets, they record the nation's heaviest carbon ratio at **`r round(carbon_heavyweight_winner$co2_per_passenger_mile[1], 2)` lbs of CO2 per passenger mile**. With this metric sitting significantly higher than the standard national transit baseline of **0.463 lbs**, consider this a friendly, data-driven nudge that it’s time to swap out those old engines for some shiny new electric fleets!
+
+Hopefully this state will improve its transit system.
 
 ---
 
-### 📊 Media Supplements for Winners. The Baseline Comparison in graphs!
+Congratulations to all the winners, very well deserved! Now let's see it together. The agencies from California, Washington, and New York took the lead. **The Greenest Agency** and the **Most Emissions Avoided** illustrated as follows. 
 
-The National Transit Board has cleared the following high-density visual supplements for inclusion in nightly news broadcasts and digital media packages. These illustrations display the carbon mitigation data in both absolute and relative terms, providing a self-contained baseline comparison against standard private transportation methods.
-
+#### **The Big Winners (📊 Media Supplements)**
 ```{r}
 #| echo: false
 #| message: false
@@ -802,25 +831,7 @@ library(ggplot2)
 library(dplyr)
 library(stringr)
 
-# =========================================================================
-# 1. RE-CREATE THE DATA PIPELINE FOR THE PODIUM (FIXES NOT FOUND ERROR)
-# =========================================================================
-podium_data <- top_carbon_savers |> 
-  slice_max(co2_avoided_tons, n = 3) |> 
-  mutate(
-    Clean_Name = case_when(
-      str_detect(agency_name, "New York City Transit") ~ "MTA NYC Transit",
-      str_detect(agency_name, "Long Island") ~ "MTA LIRR",
-      str_detect(agency_name, "Metro-North") ~ "MTA Metro-North"
-    ),
-    podium_position = factor(Clean_Name, levels = c("MTA LIRR", "MTA NYC Transit", "MTA Metro-North")),
-    emissions_saved_millions = co2_avoided_tons / 1000000
-  )
 
-# =========================================================================
-# 2. ASSIGN INDIVIDUAL GRAPH LAYOUTS
-# =========================================================================
-# Graph A: Relative Ratios Saved (Matches Illustration 1)
 comparison_data <- data.frame(
   Entity = c("Standard Passenger Car\n(Private Baseline)", "National Transit Median", "City of Seattle", "Anaheim Transportation\nNetwork"),
   Footprint = c(0.874, 0.450, 0.057, 0.015),
@@ -843,14 +854,43 @@ plot_comparison <- ggplot(comparison_data, aes(x = reorder(Entity, -Footprint), 
     axis.title.x = element_text(face = "bold", size = 10)
   ) +
   labs(
-    title = "How Green is Public Transit?",
+    title = "The Greenest Agency",
     subtitle = "Lifecycle carbon footprint per individual passenger mile: Transit vs. Private Commute",
     x = NULL,
     y = "Pounds of CO2 per Passenger Mile (Lower is Better)",
     caption = "Source: National Transit Database (NTD) & US EPA CAFE Standards (22.2 MPG baseline)"
   )
 
-# Graph B: Absolute Volume Saved (Matches Illustration 2)
+print(plot_comparison)
+```
+
+Look at that podium trophy for MTA NYC transit, New York State is the big carbon saver!
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| layout-ncol: 1
+#| fig-subcap: 
+#|   - "Illustration 2: Most emissions avoided"
+
+library(ggplot2)
+library(dplyr)
+library(stringr)
+
+podium_data <- top_carbon_savers |> 
+  slice_max(co2_avoided_tons, n = 3) |> 
+  mutate(
+    Clean_Name = case_when(
+      str_detect(agency_name, "New York City Transit") ~ "MTA NYC Transit",
+      str_detect(agency_name, "Long Island") ~ "MTA LIRR",
+      str_detect(agency_name, "Metro-North") ~ "MTA Metro-North"
+    ),
+    podium_position = factor(Clean_Name, levels = c("MTA LIRR", "MTA NYC Transit", "MTA Metro-North")),
+    emissions_saved_millions = co2_avoided_tons / 1000000
+  )
+
+
 plot_podium <- ggplot(podium_data, aes(x = podium_position, y = emissions_saved_millions)) +
   geom_col(aes(fill = podium_position), width = 0.7, show.legend = FALSE) +
   scale_fill_manual(values = c(
@@ -886,17 +926,13 @@ plot_podium <- ggplot(podium_data, aes(x = podium_position, y = emissions_saved_
     x = NULL
   )
 
-
-# =========================================================================
-# 3. PRINT BOTH GRAPHICS IN ORDER
-# =========================================================================
-print(plot_comparison)
 print(plot_podium)
+
 ```
 
 **We hope you enjoyed the gala!!!🏆🏆🏆🛑**
 
-**MEDIA CONTACT**:  
+**Media contact**:  
 Carolina Lenes  
 The Data Analysis & Eco-Logistics Press Office  
 Document Generated Seamlessly via R Studio & Quarto Compiler Pipelines using National Transit Database records.
@@ -904,10 +940,10 @@ Document Generated Seamlessly via R Studio & Quarto Compiler Pipelines using Nat
 
 
 ***
+## AI Usage Statement
 
-## Generative AI Usage Disclosure
+::: {.callout-note title="AI Usage Statement" collapse="true"}
 
-::: {.callout-note collapse="true"}
-### Generative AI Disclosure Statement
-A generative AI tool (Gemini) was used during the completion of Mini-Project 02 for coding and to accelerate code debugging, specifically resolving complex `inner_join` type inconsistencies between text and numeric vectors (`<double>` vs `<character>`), and structuring Quarto column parameters to build polished data display aesthetics. It was also used to create more fun graphs and include emojis. All analytical conclusions, interpretation models, and final metrics logic were cross-verified manually against native raw data frameworks.
+Note that this report was developed with AI collaboration (Gemini). Its use was limited to coding and graph creations. No other generative AI tools were used.
+
 :::
