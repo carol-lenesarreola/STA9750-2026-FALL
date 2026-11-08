@@ -758,11 +758,10 @@ median(emissions_avoided_table$co2_avoided_tons, na.rm = TRUE)
 
 ***THE OFFICIAL CO2 CHAMPIONSHIPS: UNVEILING THE CLIMATE CHAMPIONS (AND THE ECO-FLOPS) OF AMERICAN TRANSIT***
 
-**New York,** put on your tracksuits and grab some confetti, because the results of the ultimate green race are finally in! The National Transit Board just crunched millions of data points, tracking over a thousand public transit networks across the USA. After putting every agency through a brutal carbon obstacle course—using official U.S. CAFE fuel economy standards and hyper-local electrical grid calculations—we have our official medalists. 
+**New York,** put on your tracksuits and grab some confetti, because the results of the ultimate green race are finally in! The National Transit Board just crunched millions of data points, tracking over a thousand public transit networks across the USA. After putting every agency through a brutal carbon obstacle course, using official U.S. CAFE fuel economy standards and hyper-local electrical grid calculations, we have our official medalists. 
 
 Grab your front-row seat as we hand out the trophies for the most legendary green victories (and a friendly "get it together" whistle to the ultimate carbon heavyweights).
 
----
 
 #### 🏆 1. THE GREENEST TRANSIT AGENCY AWARD
 
