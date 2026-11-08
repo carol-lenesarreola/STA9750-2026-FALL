@@ -261,7 +261,7 @@ load_ntd_service <- function(){
 
 NTD_SERVICE <- load_ntd_service()
 ```
-Unlinked Passenger Trips (UPT) measure the total number of distinct boarding segments during 2025. For example, if you take a bus and then transfer to a subway train to complete your commute, that single journey counts as two individual UPT segments because you boarded two separate vehicles.
+**Unlinked Passenger Trips (UPT)** measure the total number of distinct boarding segments during 2025. For example, if you take a bus and then transfer to a subway train to complete your commute, that single journey counts as two individual **UPT** segments because you boarded two separate vehicles.
 
 
 # Data Cleaning and Preparation
@@ -340,8 +340,7 @@ After unifying our datasets by standardizing the mode column casing inside our s
 
 **Task 3a**: Initial Analisys of SEP Data. Using **EIA_SEP_REPORT** data.
 
-**Question 1**: Which 5 states have the most expensive retail electricity? (**Graph**). We analyze the state electricity profiles to isolate the top 5 states with the highest retail electricity pricing metrics.
-
+**Question 1**: Which 5 states have the most expensive retail electricity? (**Graph**). 
 ```{r}
 #| label: task-3a-q1-expensive-electricity-graph
 #| message: false
@@ -359,9 +358,11 @@ ggplot(top_5_expensive, aes(x = reorder(state, -electricity_price_MWh), y = elec
     x = "State", y = "Price per MWh ($)"
   )
 ```
-• The 5 states with the most expensive retail electricity, in descending order, are: Hawaii, California, Connecticut, Rhode Island, and Massachusetts.
+The 5 states with the most expensive retail electricity, in descending order, are: **Hawaii**, **California**, **Connecticut**, **Rhode Island**, and **Massachusetts**.
 
-**Question 2**: Which 5 states have the ‘dirtiest’ electricity mix? (**Table**). We sort states by their carbon intensity coefficient to identify the top 5 "dirtiest" generation balances.
+We analyzed the state electricity profiles to isolate the top 5 states with the highest retail electricity pricing metrics.
+
+**Question 2**: Which 5 states have the ‘dirtiest’ electricity mix? (**Table**). 
 
 ```{r}
 #| label: task-3a-q2-dirtiest-electricity-table
@@ -385,9 +386,11 @@ top_5_dirtiest |>
     column_labels.background.color = "#F2F4F6"
   )
 ```
-• The top 5 states with the ‘dirtiest’ electricity mix are, in descending order, West Virginia, Kentucky, Wyoming, Missouri, and Hawaii, again!
+The top 5 states with the ‘dirtiest’ electricity mix are, in descending order, **West Virginia**, **Kentucky**, **Wyoming**, **Missouri**, and **Hawaii**, again! 
 
-**Question 3**: On average, how many pounds of CO2 are emitted per MWh of electricity produced in the US? (**Inline answer**). To ensure structural accuracy across states of vastly differing output sizes, we calculate a generation-weighted average of pounds of CO2 emitted per MWh nationally.
+We sorted states by their carbon intensity coefficient to identify the top 5 "dirtiest" generation balances.
+
+**Question 3**: On average, how many pounds of CO2 are emitted per MWh of electricity produced in the US? (**Inline answer**). 
 
 ```{r}
 #| label: task-3a-q3-weighted-co2
@@ -401,14 +404,14 @@ national_weighted_co2 <- EIA_SEP_REPORT |>
   pull(weighted_avg)
 ```
 
-On average, the United States emits `r round(national_weighted_co2, 2)` pounds of CO2 per Megawatt-Hour (MWh) of electricity produced across all regional grid divisions.
+On average, the United States emits **`r round(national_weighted_co2, 2)`** pounds of CO2 per Megawatt-Hour (MWh) of electricity produced across all regional grid divisions. To ensure structural accuracy across states of vastly differing output sizes, we calculated a generation-weighted average of pounds of CO2 emitted per MWh nationally.
 
 
 ## EDA - NTD Energy Usage
 
 **Task 3b**: Explore NTD Service Data. Using **NTD_ENERGY** data.
 
-**Question 1**: Which five transit agencies used the most gallons of fuel (all sources) and how did it breakdown by type? (**Table**). We calculate total fuel footprints across all major combustion assets to uncover the five largest consuming transit authorities.
+**Question 1**: Which five transit agencies used the most gallons of fuel (all sources) and how did it breakdown by type? (**Table**). 
 
 ```{r}
 #| label: task-3b-q1-fuel-consumers-table
@@ -461,10 +464,12 @@ top_5_consumers |>
     column_labels.background.color = "#F3F4F6"
   )
 ```
-• The top 5 transit agencies which used the most gallons of fuel (all sources) are:New Jersey Transit Corporation, MTA New York City Transit, Los Angeles County Metropolitan Transportation Authority, Northeast Illinois Regional Commuter Railroad Corporation, Massachusetts Bay Transportation Authority; we can easily spot the broken down sources in the table above.   
+The top 5 transit agencies which used the most gallons of fuel (all sources) are: **New Jersey Transit Corporation**, **MTA New York City Transit**, **Los Angeles County Metropolitan Transportation Authority**, **Northeast Illinois Regional Commuter Railroad Corporation**,and **Massachusetts Bay Transportation Authority**.
+
+We can easily spot the broken down sources in the table above. We calculated total fuel footprints across all major combustion assets to uncover the five largest consuming transit authorities.   
 
 
-**Question 3**: What is the least commonly used fuel source for US public transit? (**Inline Answer**). We compute cumulative totals across alternative power assets in the database to isolate the rarest fuel resource currently deployed across the national transit grid. 
+**Question 3**: What is the least commonly used fuel source for US public transit? (**Inline Answer**). 
 
 ```{r}
 
@@ -486,15 +491,17 @@ rarest_fuel_name <- fuel_rankings$Fuel_Type[1]
 rarest_val       <- fuel_rankings$Total_Value[1]
 ```
 
-The least commonly used fuel type source for active US public transit infrastructure networks is `r rarest_fuel_name`, registering a negligible footprint of `r format(rarest_val, big.mark = ",")` units compared to 
-traditional petroleum or power assets.
+The least commonly used fuel type source for active US public transit infrastructure networks is **`r rarest_fuel_name`**, registering a negligible footprint of **`r format(rarest_val, big.mark = ",")`** units compared to 
+traditional petroleum or power assets. 
+
+We computed cumulative totals across alternative power assets in the database to isolate the rarest fuel resource currently deployed across the national transit grid. 
 
 
 ## EDA NTD Service
 
 **Task 3c**: Explore NTD Service Data. Using **NTD_SERVICE** data.
 
-**Question 1**: Which five transit services have the most UPT annually? (**Graph**). We evaluate the `total_upt` column to map the top 5 transit services moving the highest passenger volume.
+**Question 1**: Which five transit services have the most UPT annually? (**Graph**). 
 
 ```{r}
 #| label: task-3c-q1-top-upt-graph
@@ -529,9 +536,11 @@ ggplot(top_5_upt, aes(x = reorder(Label, total_upt), y = total_upt)) +
 
   
 ```
-• The five transit services with the most UPT annually correspond to the states of New York, with the 1-2 podium, California in 3rd place, then Chicago, and lastly Washington. 
+The five transit services with the most **UPT** annually correspond to the states of **New York**, with the 1-2 podium, **California** in 3rd place, then **Chicago**, and lastly **Washington**. 
 
-**Question 4**: Which five states have the fewest total miles travelled by public transit? (**Graph**). We aggregate total transit system distance covered across administrative state designations to flag areas with minimal public logistics development.
+We evaluated the `total_upt` column to map the top 5 transit services moving the highest passenger volume.
+
+**Question 4**: Which five states have the fewest total miles travelled by public transit? (**Graph**). 
 
 ```{r}
 #| label: task-3c-q4-fewest-miles-graph
@@ -589,10 +598,11 @@ ggplot(fewest_miles_states, aes(x = reorder(state, Total_Miles), y = Total_Miles
     panel.grid.minor = element_blank()
   )
 ```
-• As it is shown in the table above, the five states with the fewest total miles travelled by public transit are Idaho, Mississippi, North Dakota, New Hampshire, and South Dakota. Here we used color *luminance* in descending order to display the states from the fewer to the fewest public transit passenger miles. 
+As it is shown in the table above, the five states with the fewest total miles travelled by public transit are **Idaho**, **Mississippi**, **North Dakota**, **New Hampshire**, and **South Dakota**. For our graph, we used color *luminance* in descending order to display the states from the fewer to the fewest public transit passenger miles.
+
+We aggregated total transit system distance covered across administrative state designations to flag areas with minimal public logistics development.
 
 **Question 5**: Are all states represented in this data? If no, which ones are missing? (**Inline**). 
-We verify geographic collection patterns by matching active transit reporting regions against native R environment tracking attributes.
 
 ```{r}
 #| label: task-3c-q5-missing-states
@@ -606,7 +616,9 @@ reported_states <- USAGE_AND_ENERGY |>
 missing_states <- setdiff(state.abb, reported_states)
 ```
 
-No, not all fifty states are explicitly represented with operational combustion profiles in this iteration; regions such as `r paste(missing_states, collapse=", ")` are currently omitted due to reporting threshold exemptions.
+No, not all fifty states are explicitly represented with operational combustion profiles in this iteration; regions such as **`r paste(missing_states, collapse=", ")`** are currently omitted due to reporting threshold exemptions.
+
+We verified geographic collection patterns by matching active transit reporting regions against native R environment tracking attributes.
 
 ---
 
@@ -699,6 +711,17 @@ top_carbon_savers |>
 
 * **The Calculation Method:** Calculated by using US CAFE fuel standards (assuming a consumer passenger fleet baseline of 22.2 MPG at 19.4 lbs of CO2 per gallon) to determine the total gallons and emissions if all passenger miles were driven in single-occupancy cars, then subtracting the agency's actual transit footprint.
 
+Reference value for Greenest Agency & Custom Awards
+```{r}
+# Reference value for Greenest Agency & Custom Awards (Median emissions per passenger mile)
+median(agency_efficiency$emissions_per_passenger_mile, na.rm = TRUE)
+```
+Reference value for Emissions Avoided
+```{r}
+# Reference value for Emissions Avoided (Median tons avoided across the country)
+median(emissions_avoided_table$co2_avoided_tons, na.rm = TRUE)
+```
+
 ### 3. The Local Efficiency Marvel (A custom category)
 ```{r}
 
@@ -745,18 +768,10 @@ carbon_heavyweight_winner |>
 
 ---
 
-```{r}
-# Reference value for Greenest Agency & Custom Awards (Median emissions per passenger mile)
-median(agency_efficiency$emissions_per_passenger_mile, na.rm = TRUE)
-
-# Reference value for Emissions Avoided (Median tons avoided across the country)
-median(emissions_avoided_table$co2_avoided_tons, na.rm = TRUE)
-```
-
 # Press Release 
 
 
-***THE OFFICIAL CO2 CHAMPIONSHIPS: UNVEILING THE CLIMATE CHAMPIONS (AND THE ECO-FLOPS) OF AMERICAN TRANSIT***
+***The Official CO2 Championships: Unveiling The Climate Champions (and the "Worst of") Of American Transit***
 
 **New York,** put on your tracksuits and grab some confetti, because the results of the ultimate green race are finally in! The National Transit Board just crunched millions of data points, tracking over a thousand public transit networks across the USA. After putting every agency through a brutal carbon obstacle course, using official U.S. CAFE fuel economy standards and hyper-local electrical grid calculations, we have our official medalists. 
 
@@ -812,7 +827,6 @@ Because of massive, sprawling regional routes where giant motor buses sometimes 
 
 Hopefully this state will improve its transit system.
 
----
 
 Congratulations to all the winners, very well deserved! Now let's see it together. The agencies from California, Washington, and New York took the lead. **The Greenest Agency** and the **Most Emissions Avoided** illustrated as follows. 
 
@@ -930,6 +944,8 @@ print(plot_podium)
 ```
 
 **We hope you enjoyed the gala!!!🏆🏆🏆🛑**
+
+---
 
 **Media contact**:  
 Carolina Lenes  
